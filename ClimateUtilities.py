@@ -714,6 +714,9 @@ class integrator:
     self.y = 0.+ ystart
     self.dx = dx #Can instead be set with the first call to next()
     self.params = None
+    
+    self.xstart = xstart
+    self.ystart = ystart
   #Sets the parameters for the integrator (optional).
   #The argument can be any Python entity at all. It is
   #up to the user to make sure the derivative function can
@@ -742,8 +745,48 @@ class integrator:
      self.y += h6*(dydx+dyt+2.0*dym)
      self.x += h
      return self.x,self.y
+     
+  # for those who like their approximations worse,
+  # numerically solved using the difference method:
+  def midpointNext(self, dx = None):
+    if not (dx == None):
+      self.dx = dx
+    h = self.dx
+    tx = self.x + h/2.
+    ty = self.y + (h/2.) * self.derivs(self.x,self.y,self.params)
+    self.y += h * self.derivs(tx,ty,self.params)
+    self.x += h
+    return self.x,self.y
 
+  # reset the iterator to be back at the initial x and y values
+  def restart(self):
+    self.x = self.xstart
+    self.y = self.ystart
+    
+  # plots the trajectory of the various components from time "xstart" to time "xstop"
+  def curve(self, xstop, method=None):
+    timesteps = int(round(((xstop + self.dx) - self.xstart)/self.dx))
+    c = Curve()
+    
+    # create initial values; this is the first time step
+    c['x'] = [self.xstart]
+    c['y'] = [self.ystart]
+    
+    # for the rest of the time steps ...
+    for index in range(timesteps - 1):
+      if method == 'midpoint':
+        newX, newY = self.midpointNext() 
+      else:
+        newX, newY = self.next()
+      c['x'] = numpy.append(c['x'],newX)
+      c['y'] = numpy.append(c['y'],newY)
+    
+    self.restart()
+    
+    return c
 
+  def plot(self, xstop, method=None):
+    plot(self.curve(xstop, method))
 
 #**ToDo:  
 #
@@ -902,3 +945,5 @@ class newtSolve:
 
 
 
+    
+         
