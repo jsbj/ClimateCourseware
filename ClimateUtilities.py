@@ -745,18 +745,6 @@ class integrator:
      self.y += h6*(dydx+dyt+2.0*dym)
      self.x += h
      return self.x,self.y
-     
-  # for those who like their approximations worse,
-  # numerically solved using the difference method:
-  def midpointNext(self, dx = None):
-    if not (dx == None):
-      self.dx = dx
-    h = self.dx
-    tx = self.x + h/2.
-    ty = self.y + (h/2.) * self.derivs(self.x,self.y,self.params)
-    self.y += h * self.derivs(tx,ty,self.params)
-    self.x += h
-    return self.x,self.y
 
   # reset the iterator to be back at the initial x and y values
   def restart(self):
