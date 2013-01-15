@@ -54,8 +54,13 @@ except:
         print "numpy not found. Using Numeric instead"
         print "Everything should still work, but consider upgrading to numpy"
     except:
-        print "Neither numpy nor Numeric found."
-        print "Please install numpy (preferred) or Numeric."
+        try:
+            import pylab
+            import pylab as numpy
+            numpy.Float = numpy.float
+        except:
+            print "Neither numpy nor Numeric found."
+            print "Please install numpy (preferred) or Numeric."
 
 #-----------------------------------------------------
 #Import graphics utilities
