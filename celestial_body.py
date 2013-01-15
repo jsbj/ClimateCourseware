@@ -2,7 +2,7 @@ import math, phys
 from subprocess import Popen, PIPE
 from ClimateUtilities import *
 import dateutil.parser
-import matplotlib
+import matplotlib, datetime
 
 class CelestialBody:
     '''
@@ -55,9 +55,10 @@ class CelestialOrbiter(CelestialBody):
     def estimatedL(self):
       return self.star().totalStarlight() / (4 * math.pi * (self.rsm ** 2.))
       
-    def graphTs(self): #, time, location):
+    def graphTs(self, options): #, time, location):
       if self.name == 'Earth':
-        data = [x.split(',') for x in Popen('ruby ncdc_scraper.rb', stdout=PIPE, shell=True).stdout.read().split('\n')[0:-1]]
+        command = 'ruby ncdc_scraper.rb {} {}'.format(options['time']['start'].isoformat(), options['time']['end'].isoformat())
+        data = [x.split(',') for x in Popen(command, stdout=PIPE, shell=True).stdout.read().split('\n')[0:-1]]
         times = matplotlib.dates.date2num([dateutil.parser.parse(x[0]) for x in data])
         temps = [float(x[1]) for x in data]
         matplotlib.pyplot.plot_date(times, temps)
