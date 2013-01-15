@@ -1,8 +1,87 @@
+import math, phys
+from subprocess import Popen, PIPE
+from ClimateUtilities import *
+import dateutil.parser
+import matplotlib
+
+class CelestialBody:
+    '''
+    The CelestialBody class provides some base constants and methods used by the Planet, Moon, and Star classes.
+    '''
+    def __init__(self):
+        self.name = None # Name of the celestial body
+        self.a = None # Mean radius of the celestial body
+        self.g = None # Surface gravitational acceleration
+        self.Tsbar = None #Mean surface temperature
+        self.Tsmax = None #Maximum surface temperature
+        self.Tsmin = None #Maximum surface temperature
+
+class Star(CelestialBody):
+    '''
+    A Star object represents a star.
+
+    For stars, Tsbar and Tsmax refer to the average and maximum photospheric temperature, respectively.
+    '''
+
+    # returns intensity of total starlight in watts
+    def totalStarlight(self):
+        return math.pi * 4. * (self.a ** 2.) * phys.sigma * (self.Tsbar ** 4.)
+
+# Let's make some stars:
+TheSun = Star()
+TheSun.name = 'The Sun'
+TheSun.a = 6.955e8 # http://en.wikipedia.org/wiki/Solar_radius
+TheSun.g = 274.0 # http://en.wikipedia.org/wiki/Sun
+TheSun.Tsbar = 5778. # http://en.wikipedia.org/wiki/Sun
+TheSun.Tsmax = 5778. # http://en.wikipedia.org/wiki/Sun
+
+class CelestialOrbiter(CelestialBody):
+    '''
+    The Orbiter class provides some base constants and methods used by objects that orbit other objects, such as planets and moons.
+    '''
+    def __init__(self):
+        CelestialBody.__init__(self)
+        self.rsm = None #Semi-major axis
+        self.year = None #Sidereal length of year
+        self.eccentricity = None # Eccentricity
+        self.day = None #Mean tropical length of day
+        self.obliquity = None #Obliquity to orbit
+        self.Lequinox = None #Longitude of equinox
+        self.orbits = None # Object which this object orbits
+
+        self.L = None #Annual mean solar constant (current)
+        self.albedo = None #Bond albedo
+        
+    def estimatedL(self):
+      return self.star().totalStarlight() / (4 * math.pi * (self.rsm ** 2.))
+      
+    def graphTs(self): #, time, location):
+      if self.name == 'Earth':
+        data = [x.split(',') for x in Popen('ruby ncdc_scraper.rb', stdout=PIPE, shell=True).stdout.read().split('\n')[0:-1]]
+        times = matplotlib.dates.date2num([dateutil.parser.parse(x[0]) for x in data])
+        temps = [float(x[1]) for x in data]
+        matplotlib.pyplot.plot_date(times, temps)
+      
+    def estimatedTsbar(self, options):
+      receivedSunlight = self.estimatedL() * (1 - self.albedo)
+      if options['heatTransport'] == 'instantaneous':
+        return (receivedSunlight / (4 * phys.sigma)) ** 0.25
+      elif options['heatTransport'] == None:
+        return 0.4 * ((receivedSunlight / phys.sigma) ** 0.25)
+        
+    def estimatedTsmax(self, options):
+      receivedSunlight = self.estimatedL() * (1 - self.albedo)
+      if options['heatTransport'] == 'instantaneous':
+        return (receivedSunlight / (4 * phys.sigma)) ** 0.25      
+      elif options['heatTransport'] == None:
+        return (receivedSunlight / phys.sigma) ** 0.25
+
+
 #Planetary database
 #Source for planetary data, and some of the data on
 #the moons, is http://nssdc.gsfc.nasa.gov/planetary/factsheet/
 
-class Planet:
+class Planet(CelestialOrbiter):
     '''
     A Planet object contains basic planetary data.
     If P is a Planet object, the data are:
@@ -11,7 +90,7 @@ class Planet:
            P.g = Surface gravitational acceleration (m/s**2)
            P.L = Annual mean solar constant (current) (W/m**2)
            P.albedo Bond albedo (fraction)
-           
+
            P.rsm = Semi-major axis of orbit about Sun (m)
            P.year = Sidereal length of year (s)
            P.eccentricity =  Eccentricity (unitless)
@@ -32,22 +111,9 @@ class Planet:
         'This planet object contains information on %s\n'%self.name
         line2 = 'Type \"help(Planet)\" for more information\n'
         return line1+line2
-    def __init__(self):
-        self.name = None #Name of the planet
-        self.a = None #Mean radius of planet
-        self.g = None #Surface gravitational acceleration
-        self.L = None #Annual mean solar constant (current)
-        self.albedo = None #Bond albedo
-        
-        self.rsm = None #Semi-major axis
-        self.year = None #Sidereal length of year
-        self.eccentricity = None # Eccentricity
-        self.day = None #Mean tropical length of day
-        self.obliquity = None #Obliquity to orbit
-        self.Lequinox = None #Longitude of equinox
 
-        self.Tsbar = None #Mean surface temperature
-        self.Tsmax = None #Maximum surface temperature
+    def star(self):
+        return self.orbits
 
 #----------------------------------------------------       
 Mercury = Planet()        
@@ -63,6 +129,7 @@ Mercury.eccentricity = .2056 # Eccentricity
 Mercury.day = 4222.6*3600. #Mean tropical length of day
 Mercury.obliquity = .01 #Obliquity to orbit (deg)
 Mercury.Lequinox = None #Longitude of equinox (deg)
+Mercury.orbits = TheSun
 #
 Mercury.Tsbar = 440. #Mean surface temperature
 Mercury.Tsmax = 725. #Maximum surface temperature
@@ -81,6 +148,7 @@ Venus.eccentricity = .0067 # Eccentricity
 Venus.day = 2802.*3600. #Mean tropical length of day
 Venus.obliquity = 177.36 #Obliquity to orbit (deg)
 Venus.Lequinox = None #Longitude of equinox (deg)
+Venus.orbits = TheSun
 #
 Venus.Tsbar = 737. #Mean surface temperature
 Venus.Tsmax = 737. #Maximum surface temperature
@@ -99,6 +167,7 @@ Earth.eccentricity = .0167 # Eccentricity
 Earth.day = 24.000*3600. #Mean tropical length of day
 Earth.obliquity = 23.45 #Obliquity to orbit (deg)
 Earth.Lequinox = None #Longitude of equinox (deg)
+Earth.orbits = TheSun
 #
 Earth.Tsbar = 288. #Mean surface temperature
 Earth.Tsmax = None #Maximum surface temperature
@@ -117,6 +186,7 @@ Mars.eccentricity = .0935 # Eccentricity
 Mars.day = 24.6597*3600. #Mean tropical length of day
 Mars.obliquity = 25.19 #Obliquity to orbit (deg)
 Mars.Lequinox = None #Longitude of equinox (deg)
+Mars.orbits = TheSun
 #
 Mars.Tsbar = 210. #Mean surface temperature
 Mars.Tsmax = 295. #Maximum surface temperature
@@ -135,6 +205,7 @@ Jupiter.eccentricity = .0489 # Eccentricity
 Jupiter.day = 9.9259*3600. #Mean tropical length of day
 Jupiter.obliquity = 3.13 #Obliquity to orbit (deg)
 Jupiter.Lequinox = None #Longitude of equinox (deg)
+Jupiter.orbits = TheSun
 #
 Jupiter.Tsbar = 165. #Mean surface temperature
 Jupiter.Tsmax = None #Maximum surface temperature
@@ -153,6 +224,7 @@ Saturn.eccentricity = .0565 # Eccentricity
 Saturn.day = 10.656*3600. #Mean tropical length of day
 Saturn.obliquity = 26.73 #Obliquity to orbit (deg)
 Saturn.Lequinox = None #Longitude of equinox (deg)
+Saturn.orbits = TheSun
 #
 Saturn.Tsbar = 134. #Mean surface temperature
 Saturn.Tsmax = None #Maximum surface temperature
@@ -171,6 +243,7 @@ Uranus.eccentricity = .0457 # Eccentricity
 Uranus.day = 17.24*3600. #Mean tropical length of day
 Uranus.obliquity = 97.77 #Obliquity to orbit (deg)
 Uranus.Lequinox = None #Longitude of equinox (deg)
+Uranus.orbits = TheSun
 #
 Uranus.Tsbar = 76. #Mean surface temperature
 Uranus.Tsmax = None #Maximum surface temperature
@@ -190,6 +263,7 @@ Neptune.eccentricity = .0113 # Eccentricity
 Neptune.day = 16.11*3600. #Mean tropical length of day
 Neptune.obliquity = 28.32 #Obliquity to orbit (deg)
 Neptune.Lequinox = None #Longitude of equinox (deg)
+Neptune.orbits = TheSun
 #
 Neptune.Tsbar = 72. #Mean surface temperature
 Neptune.Tsmax = None #Maximum surface temperature
@@ -208,34 +282,20 @@ Pluto.eccentricity = .2488 # Eccentricity
 Pluto.day = 153.2820*3600. #Mean tropical length of day
 Pluto.obliquity = 122.53 #Obliquity to orbit (deg)
 Pluto.Lequinox = None #Longitude of equinox (deg)
+Pluto.orbits = TheSun
 #
 Pluto.Tsbar = 50. #Mean surface temperature
 Pluto.Tsmax = None #Maximum surface temperature
 
+class Moon(CelestialOrbiter):
+    def star(self):
+        return self.orbits.orbits
+        
+        
+    #Selected moons
 
 
-#Selected moons
-
-#----------------------------------------------------        
-Moon = Planet()
-Moon.name = 'Moon' #Name of the planet
-Moon.a = 1.737e6 #Mean radius of planet
-Moon.g = 1.62 #Surface gravitational acceleration
-Moon.albedo = .11 #Bond albedo
-Moon.L = 1367.6 #Annual mean solar constant (current)
-#
-Moon.rsm = Earth.rsm #Semi-major axis
-Moon.year = Earth.year #Sidereal length of year
-Moon.eccentricity = None # Eccentricity
-Moon.day = 28.*24.*3600. #Mean tropical length of day (approx)
-Moon.obliquity = None #Obliquity to orbit (deg)
-Moon.Lequinox = None #Longitude of equinox (deg)
-#
-Moon.Tsbar = None #Mean surface temperature
-Moon.Tsmax = 400. #Maximum surface temperature
-Moon.Tsmin = 100. #Minimum surface temperature
-
-Titan = Planet()
+Titan = Moon()
 Titan.name = 'Titan' #Name of the planet
 Titan.a = 2.575e6 #Mean radius of planet
 Titan.g = 1.35 #Surface gravitational acceleration
@@ -253,8 +313,9 @@ Titan.Lequinox = Saturn.Lequinox #Longitude of equinox
 #
 Titan.Tsbar = 95. #Mean surface temperature
 Titan.Tsmax = None #Maximum surface temperature
+Titan.orbits = Saturn
 
-Europa = Planet()
+Europa = Moon()
 Europa.name = 'Europa' #Name of the planet
 Europa.a = 1.560e6 #Mean radius of planet
 Europa.g = 1.31 #Surface gravitational acceleration
@@ -270,8 +331,9 @@ Europa.Lequinox = None #Longitude of equinox
 #
 Europa.Tsbar = 103. #Mean surface temperature
 Europa.Tsmax = 125. #Maximum surface temperature
+Europa.orbits = Jupiter
 
-Triton = Planet()
+Triton = Moon()
 Triton.name = 'Triton' #Name of the planet
 Triton.a = 2.7068e6/2. #Mean radius of planet
 Triton.g = .78 #Surface gravitational acceleration
@@ -293,5 +355,24 @@ Triton.Tsbar = 34.5 #Mean surface temperature
                     #This is probably a computed blackbody
                     #temperature, rather than an observation
 Triton.Tsmax = None #Maximum surface temperature
+Triton.orbits = Neptune
 
-
+#----------------------------------------------------        
+TheMoon = Moon()
+TheMoon.name = 'The Moon' #Name of the planet
+TheMoon.a = 1.737e6 #Mean radius of planet
+TheMoon.g = 1.62 #Surface gravitational acceleration
+TheMoon.albedo = .11 #Bond albedo
+TheMoon.L = 1367.6 #Annual mean solar constant (current)
+#
+TheMoon.rsm = Earth.rsm #Semi-major axis
+TheMoon.year = Earth.year #Sidereal length of year
+TheMoon.eccentricity = None # Eccentricity
+TheMoon.day = 28.*24.*3600. #Mean tropical length of day (approx)
+TheMoon.obliquity = None #Obliquity to orbit (deg)
+TheMoon.Lequinox = None #Longitude of equinox (deg)
+TheMoon.orbits = Earth
+#
+TheMoon.Tsbar = None #Mean surface temperature
+TheMoon.Tsmax = 400. #Maximum surface temperature
+TheMoon.Tsmin = 100. #Minimum surface temperature
