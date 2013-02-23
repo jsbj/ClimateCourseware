@@ -180,7 +180,10 @@ def plot(c):
             plotList.append(pl.plot(c.X(),data,formatList[count])[0])
             count += 1
     #Do the legends
-    pl.legend(plotList,legends)
+    ax = pl.subplot(111)
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+    pl.legend(plotList,legends,loc='center left', bbox_to_anchor=(1, 0.5))
     #
     #Do the axis reversal
     #We do it here, since we don't know the axis limits until
