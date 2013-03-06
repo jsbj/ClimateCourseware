@@ -106,7 +106,7 @@ except:
 #       Provide an easy way to add data column long-names
 #
 class Curve:
-    def __init__(self):
+    def __init__(self, *curves):
          self.Xid = None # id of data to be considered as X
          self.data = {} # Dictionary of data columns
          self.label = {} #Data column label dictionary
@@ -123,9 +123,13 @@ class Curve:
          self.YlogAxis = 0 # Use logarithmic axis for Y
          self.Xlabel = '' #X axis label
          self.Ylabel = '' #Y axis label
+         
+         for curve in curves:
+             self.addCurve(curve)
          #
          # Colors and line titles
          #
+
     #
     #Install a new curve in the data set, optionally with a variable name and label
     #Any 1D indexable object can be installed here:a Numeric array, a Masked Array,
@@ -590,7 +594,7 @@ class integrator:
   of the x and y coordinates of a planet) can be either a scalar
   or a 1D array, according to the problem. For the
   multidimensional case, this integrator will work with any
-  kind of array that behaves like a Numeric array, i.e. supports
+  kind of array that behaves like a numpy array, i.e. supports
   arithmetic operations. It will not work with plain Python lists.
   The derivative function should return an array of derivatives, in
   the multidimensional case. The derivative function can have any name.
@@ -617,21 +621,21 @@ class integrator:
   
   while in a 2D case, your function might look like:
     def g(t,z):
-      return Numeric.array([-z[1],z[0]])
+      return numpy.array([-z[1],z[0]])
   
   or perhaps something like:
     def g(t,z):
-      return t*Numeric.sin(z)
+      return t*numpy.sin(z)
   
   or even
     def g(t,z,params):
-      return Numeric.matrixmultiply(params(t),z)
+      return numpy.matrixmultiply(params(t),z)
       
   where params(t) in this case is a function returning
-  a Numeric square matrix of the right dimension to multiply z.
+  a numpy square matrix of the right dimension to multiply z.
   
   BIG WARNING:  Note that all the examples which return a
-  Numeric array return a NEW INSTANCE (i.e. copy) of an
+  numpy array return a NEW INSTANCE (i.e. copy) of an
   array.  If you try to set up a global array and re-use
   it to return your results from g, you will really be
   just returning a REFERENCE to the same array each time,
@@ -639,7 +643,7 @@ class integrator:
   results. This will mess up the computation of intermediate
   results in the Runge-Kutta step. An example of the sort of thing
   that will NOT work is:
-    zprime = Numeric.zeros(2,Numeric.Float)
+    zprime = numpy.zeros(2,numpy.Float)
     def g(t,z,params):
       zprime[0] = z[1]
       zprime[1] = -z[0]
@@ -649,9 +653,9 @@ class integrator:
   reference/value distinction.  The right way to define the function
   would be
     def g(t,z):
-      return Numeric.array([z[1],-z[0]])
+      return numpy.array([z[1],-z[0]])
   Try this one. It should work properly now. Note that any arithmetic
-  performed on Numeric array objects returns a new instance of an Array
+  performed on numpy array objects returns a new instance of an Array
   object. Hence, a function definition like 
     def g(t,z):
       return t*z*z+1.
