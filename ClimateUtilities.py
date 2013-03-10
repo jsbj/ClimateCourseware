@@ -761,8 +761,11 @@ class integrator:
     c = Curve()
     
     # create initial values; this is the first time step
-    c['x'] = [self.xstart]
-    c['y'] = [self.ystart]
+    c['t'] = [self.xstart]
+    
+    self.ystart = numpy.array([self.ystart]).flatten()
+    for i in range(len(self.ystart)):
+      c['x{}'.format(i)] = [self.ystart[i]]
     
     # for the rest of the time steps ...
     for index in range(timesteps - 1):
@@ -770,8 +773,10 @@ class integrator:
         newX, newY = self.midpointNext() 
       else:
         newX, newY = self.next()
-      c['x'] = numpy.append(c['x'],newX)
-      c['y'] = numpy.append(c['y'],newY)
+
+      c['t'] = numpy.append(c['t'],newX)
+      for i in range(len(self.ystart)):
+        c['x{}'.format(i)] = numpy.append(c['x{}'.format(i)], newY[i])
     
     self.restart()
     
