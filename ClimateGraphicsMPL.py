@@ -196,6 +196,11 @@ def plot(c):
     if c.reverseY:
         axes.set_ylim(axes.get_ylim()[::-1])
     #Now re-draw the plot
+    
+    if c.Xlimits:
+        axes.set_ylim(c.Xlimits)
+    if c.Ylimits:
+        axes.set_ylim(c.Ylimits)
     pl.draw()
     #(Insert commands needed to show plot, if necessary)
     return plotObj(None,fig) #Eventually we will use this to make subplots and do save option

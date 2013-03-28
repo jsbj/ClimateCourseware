@@ -764,6 +764,7 @@ class integrator:
     c['t'] = [self.xstart]
     
     self.ystart = numpy.array([self.ystart]).flatten()
+    self.y = self.ystart
     for i in range(len(self.ystart)):
       c['x{}'.format(i)] = [self.ystart[i]]
     
