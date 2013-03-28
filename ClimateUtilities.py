@@ -123,6 +123,8 @@ class Curve:
          self.YlogAxis = 0 # Use logarithmic axis for Y
          self.Xlabel = '' #X axis label
          self.Ylabel = '' #Y axis label
+         self.Xlimits = None # sets the min and max values of the x axis
+         self.Ylimits = None # sets the min and max values of the y axis
          
          for curve in curves:
              self.addCurve(curve)
